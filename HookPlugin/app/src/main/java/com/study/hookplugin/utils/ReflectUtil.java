@@ -31,8 +31,24 @@ public class ReflectUtil {
     private static Field sActivityInstrumentationField;
     private static Object sActivityThread;
 
+
+    /**
+     *  init 方法的作用主要用两个：
+     *  1、 拿到 ActivityThread 对象，进而拿到 AdtivityThread 中的 mInstrumentation
+     *  2、拿到 Activity 中的 mInstrumentation
+     * @return
+     */
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public static boolean init() {
+
+        /**
+         *  // 这里会启动新的Activity，核心功能都在 mMainThread.getApplicationThread() 中完成
+             Instrumentation.ActivityResult ar =
+             mInstrumentation.execStartActivity(
+             this, mMainThread.getApplicationThread(), mToken, this,
+             intent, requestCode, options);
+         */
+
         //获取当前的ActivityThread对象
         Class<?> activityThreadClass = null;
         try {
@@ -41,16 +57,19 @@ public class ReflectUtil {
             currentActivityThreadMethod.setAccessible(true);
             Object currentActivityThread = currentActivityThreadMethod.invoke(null);
 
-
             //拿到在ActivityThread类里面的原始mInstrumentation对象
             Field instrumentationField = activityThreadClass.getDeclaredField(FIELD_mInstrumentation);
             instrumentationField.setAccessible(true);
+            //拿到这个 Filed 是为了方便修改这个值
             sActivityThreadInstrumentationField = instrumentationField;
 
+            //通过反射拿到 mInstrumentation 并保存
             sInstrumentation = (Instrumentation) instrumentationField.get(currentActivityThread);
+            //保存 ActivityThread 对象
             sActivityThread = currentActivityThread;
 
 
+            //拿到 Activity 的 mInstrumentation
             sActivityInstrumentationField =  Activity.class.getDeclaredField(FIELD_mInstrumentation);
             sActivityInstrumentationField.setAccessible(true);
             return true;
@@ -84,9 +103,13 @@ public class ReflectUtil {
 
     public static void setActivityInstrumentation(Activity activity, PluginManager manager) {
         try {
+            //获取 activity 的 instrumentation
             sActivityInstrumentation = (Instrumentation) sActivityInstrumentationField.get(activity);
+            //通过 获取的 instrumentation，构造一个新的 instrumentation ( hook 了 execStartActivity)
             HookedInstrumentation instrumentation = new HookedInstrumentation(sActivityInstrumentation, manager);
+            //重新将对象设置给 activity
             sActivityInstrumentationField.set(activity, instrumentation);
+
             if (Constants.DEBUG) Log.e(TAG, "set activity hooked instrumentation");
         } catch (IllegalAccessException e) {
             e.printStackTrace();
