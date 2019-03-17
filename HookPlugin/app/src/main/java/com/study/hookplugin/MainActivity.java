@@ -8,23 +8,17 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
 import com.study.hookplugin.test.EvilInstrumentation;
-import com.study.hookplugin.test.SecondActivity;
 import com.study.hookplugin.utils.Constants;
-import com.study.hookplugin.utils.HookActivityUtil;
 import com.study.hookplugin.utils.PluginManager;
-import com.study.hookplugin.utils.PluginManagerTwo;
 import com.study.hookplugin.utils.ReflectUtil;
 
-import java.io.File;
 import java.lang.reflect.Field;
 
 public class MainActivity extends AppCompatActivity {
@@ -52,22 +46,6 @@ public class MainActivity extends AppCompatActivity {
 
        // test(MainActivity.this);
 
-  /*      try {
-            //StubActivity是在AndroidManifest中注册的一个傀儡Activity，是个空的，没有实际功能
-            //只是为了躲过检查
-            HookActivityUtil hookActivityUtil = new HookActivityUtil(this,StubActivity.class);
-
-            String path = Environment.getExternalStorageDirectory().getAbsolutePath()
-                    + File.separator+"plugin"+File.separator+"plugin.apk";
-            PluginManagerTwo.install(this,path);
-
-            hookActivityUtil.hookStartActivity();
-            hookActivityUtil.hookLaunchActivity();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-*/
         init();
         launch.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -132,8 +110,6 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_PERMISSION_CODE);
             }
         }
-
-        // !! must first，
         //主要是是为了拿到 ActivityThread，ActivityThread 中的 mInstrumentation 和 activity 中的 mInstrumentation
         ReflectUtil.init();
         //单例，加载 apk，hook 操作等。
@@ -147,6 +123,5 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(newBase);
-        // !!! 不要在此Hook,看源码发现mInstrumentaion会在此方法后初始化
     }
 }
